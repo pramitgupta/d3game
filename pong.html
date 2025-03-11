@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pong Game</title>
+    <style>
+        canvas {
+            border: 2px solid white;
+            background-color: black;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game objects
+        const paddleHeight = 100;
+        const paddleWidth = 10;
+        const ballSize = 10;
+
+        // Player paddles
+        const player1 = {
+            x: 20,
+            y: canvas.height/2 - paddleHeight/2,
+            score: 0,
+            speed: 8
+        };
+
+        const player2 = {
+            x: canvas.width - 30,
+            y: canvas.height/2 - paddleHeight/2,
+            score: 0,
+            speed: 8
+        };
+
+        // Ball properties
+        const ball = {
+            x: canvas.width/2,
+            y: canvas.height/2,
+            speedX: 5,
+            speedY: 5,
+            size: ballSize
+        };
+
+        // Game controls
+        const keys = {
+            w: false,
+            s: false,
+            ArrowUp: false,
+            ArrowDown: false
+        };
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        // Game loop
+        function gameLoop() {
+            movePaddles();
+            moveBall();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function movePaddles() {
+            // Player 1 (W/S keys)
+            if(keys.w && player1.y > 0) player1.y -= player1.speed;
+            if(keys.s && player1.y < canvas.height - paddleHeight) player1.y += player1.speed;
+
+            // Player 2 (Up/Down arrows)
+            if(keys.ArrowUp && player2.y > 0) player2.y -= player2.speed;
+            if(keys.ArrowDown && player2.y < canvas.height - paddleHeight) player2.y += player2.speed;
+        }
+
+        function moveBall() {
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+
+            // Top/bottom wall collision
+            if(ball.y < 0 || ball.y > canvas.height - ballSize) ball.speedY *= -1;
+
+            // Paddle collision
+            if(
+                // Player 1 collision
+                (ball.x < player1.x + paddleWidth && 
+                ball.y > player1.y && 
+                ball.y < player1.y + paddleHeight) ||
+                
+                // Player 2 collision
+                (ball.x > player2.x - ballSize && 
+                ball.y > player2.y && 
+                ball.y < player2.y + paddleHeight)
+            ) {
+                ball.speedX *= -1;
+                // Add slight random angle change
+                ball.speedY += (Math.random() * 2 - 1) * 2;
+            }
+
+            // Score points
+            if(ball.x < 0) {
+                player2.score++;
+                resetBall();
+            }
+            if(ball.x > canvas.width) {
+                player1.score++;
+                resetBall();
+            }
+        }
+
+        function resetBall() {
+            ball.x = canvas.width/2;
+            ball.y = canvas.height/2;
+            ball.speedX = -ball.speedX;
+            ball.speedY = Math.random() * 10 - 5;
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw paddles
+            ctx.fillStyle = 'white';
+            ctx.fillRect(player1.x, player1.y, paddleWidth, paddleHeight);
+            ctx.fillRect(player2.x, player2.y, paddleWidth, paddleHeight);
+
+            // Draw ball
+            ctx.fillRect(ball.x, ball.y, ballSize, ballSize);
+
+            // Draw center line
+            ctx.setLineDash([5, 15]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2, 0);
+            ctx.lineTo(canvas.width/2, canvas.height);
+            ctx.strokeStyle = 'white';
+            ctx.stroke();
+
+            // Draw scores
+            ctx.font = '48px Arial';
+            ctx.fillText(player1.score, canvas.width/4, 50);
+            ctx.fillText(player2.score, canvas.width*3/4, 50);
+        }
+
+        // Start the game
+        resetBall();
+        gameLoop();
+    </script>
+</body>
+</html>
